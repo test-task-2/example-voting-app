@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "voting-lib.labels" . | nindent 4 }}
   annotations:
-    {{- include "voting-lib.syncWave" "3" | nindent 4 }}
+    {{- include "voting-lib.syncWave" "1" | nindent 4 }}
 data:
   {{- if .Values.configMap.data }}
   {{- toYaml .Values.configMap.data | nindent 2 }}
