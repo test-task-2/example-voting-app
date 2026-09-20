@@ -13,6 +13,7 @@ spec:
     - name: {{ .Values.portName }}
       port: {{ .Values.service.port }}
       targetPort: {{ .Values.portName }}
+      protocol: TCP
       {{- if and (eq .Values.service.type "NodePort") .Values.service.nodePort }}
       nodePort: {{ .Values.service.nodePort }}
       {{- end }}

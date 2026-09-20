@@ -55,6 +55,7 @@ spec:
       ports:
         - name: {{ .Values.portName }}
           containerPort: {{ .Values.containerPort }}
+          protocol: TCP
       {{- end }}
       env:
         {{- if .Values.env.postgres }}
