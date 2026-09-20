@@ -54,3 +54,6 @@ podAntiAffinity: false
 nodeSelector: {}
 
 tolerations: []
+
+rollout:
+  enabled: false

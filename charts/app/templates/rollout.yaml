@@ -1,7 +1,7 @@
 {{- $rollout := .Values.rollout | default dict }}
-{{- if not $rollout.enabled }}
-apiVersion: apps/v1
-kind: Deployment
+{{- if $rollout.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
   name: {{ include "voting-lib.fullname" . }}
   labels:
@@ -10,9 +10,14 @@ metadata:
     {{- include "voting-lib.syncWave" "2" | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ $rollout.revisionHistoryLimit | default 2 }}
+  progressDeadlineSeconds: {{ $rollout.progressDeadlineSeconds | default 1800 }}
   selector:
     matchLabels:
       {{- include "voting-lib.selectorLabels" . | nindent 6 }}
+  strategy:
+    canary:
+      {{- toYaml $rollout.canary | nindent 6 }}
   template:
     {{- include "app.podTemplate" . | nindent 4 }}
 {{- end }}
