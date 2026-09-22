@@ -1,0 +1,96 @@
+{{- if .Values.elasticache.enabled }}
+{{- $region := required "region from terraform-values.yaml" .Values.region }}
+{{- $subnets := required "elasticacheSubnets from terraform-values.yaml" .Values.elasticacheSubnets }}
+{{- $sg := required "elasticacheSecurityGroupId from terraform-values.yaml" .Values.elasticacheSecurityGroupId }}
+{{- $conn := required "global.redis.connectionSecret" .Values.global.redis.connectionSecret }}
+{{- range $subnets }}
+---
+apiVersion: ec2.aws.m.upbound.io/v1beta1
+kind: Subnet
+metadata:
+  name: {{ .name }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    crossplane.io/external-name: {{ .id | quote }}
+spec:
+  managementPolicies: ["Observe"]
+  forProvider:
+    region: {{ $region }}
+    availabilityZone: {{ .availabilityZone }}
+    tags:
+      Name: {{ .name }}
+      Tier: redis
+  providerConfigRef:
+    kind: ClusterProviderConfig
+    name: default
+{{- end }}
+---
+apiVersion: ec2.aws.m.upbound.io/v1beta1
+kind: SecurityGroup
+metadata:
+  name: voting-redis
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    crossplane.io/external-name: {{ $sg | quote }}
+spec:
+  managementPolicies: ["Observe"]
+  forProvider:
+    region: {{ $region }}
+  providerConfigRef:
+    kind: ClusterProviderConfig
+    name: default
+---
+apiVersion: elasticache.aws.m.upbound.io/v1beta1
+kind: SubnetGroup
+metadata:
+  name: voting-redis
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    crossplane.io/external-name: voting-redis
+spec:
+  forProvider:
+    region: {{ $region }}
+    description: Voting app Redis
+    subnetIdRefs:
+      {{- range $subnets }}
+      - name: {{ .name }}
+      {{- end }}
+  providerConfigRef:
+    kind: ClusterProviderConfig
+    name: default
+---
+apiVersion: elasticache.aws.m.upbound.io/v1beta1
+kind: ReplicationGroup
+metadata:
+  name: voting-redis
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    crossplane.io/external-name: voting-redis
+spec:
+  forProvider:
+    region: {{ $region }}
+    replicationGroupId: voting-redis
+    description: voting-redis
+    engine: redis
+    engineVersion: "7.1"
+    nodeType: cache.t4g.micro
+    numCacheClusters: 1
+    port: 6379
+    parameterGroupName: default.redis7
+    subnetGroupNameRef:
+      name: voting-redis
+    securityGroupIdRefs:
+      - name: voting-redis
+    atRestEncryptionEnabled: true
+    transitEncryptionEnabled: false
+    automaticFailoverEnabled: false
+    multiAzEnabled: false
+    snapshotRetentionLimit: 0
+    applyImmediately: true
+    autoMinorVersionUpgrade: true
+  writeConnectionSecretToRef:
+    name: {{ $conn }}
+  providerConfigRef:
+    kind: ClusterProviderConfig
+    name: default
+{{- end }}

@@ -8,7 +8,8 @@
 # Hosted RDS + ElastiCache. In-cluster db/redis charts stay off.
 # Postgres user/password come from Secrets Manager cool/postgres-app.
 # POSTGRES_HOST and POSTGRES_PORT come from the Crossplane connection secret
-# after RDS is created. cool/redis is ElastiCache.
+# after RDS is created. REDIS_HOST and REDIS_PORT come from the ElastiCache
+# connection secret after Redis is created.
 
 db:
   enabled: false
@@ -26,6 +27,7 @@ global:
     connectionSecret: voting-app-postgres-conn
   redis:
     enabled: false
+    connectionSecret: voting-app-redis-conn
   gateway:
     provider: aws
     parentRefs:
@@ -36,6 +38,9 @@ global:
         sectionName: https
 
 rds:
+  enabled: true
+
+elasticache:
   enabled: true
 
 externalSecret:

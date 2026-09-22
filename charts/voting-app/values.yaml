@@ -4,6 +4,9 @@ fullnameOverride: ""
 rds:
   enabled: false
 
+elasticache:
+  enabled: false
+
 vote:
   enabled: true
   replicaCount: 2

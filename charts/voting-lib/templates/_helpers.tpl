@@ -122,6 +122,17 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   value: {{ default "redis" $redis.host | quote }}
 - name: REDIS_PORT
   value: {{ default "6379" $redis.port | quote }}
+{{- else if $redis.connectionSecret }}
+- name: REDIS_HOST
+  valueFrom:
+    secretKeyRef:
+      name: {{ $redis.connectionSecret }}
+      key: primary_endpoint_address
+- name: REDIS_PORT
+  valueFrom:
+    secretKeyRef:
+      name: {{ $redis.connectionSecret }}
+      key: port
 {{- else }}
 - name: REDIS_HOST
   valueFrom:
