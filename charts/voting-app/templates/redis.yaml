@@ -69,7 +69,6 @@ metadata:
 spec:
   forProvider:
     region: {{ $region }}
-    replicationGroupId: voting-redis
     description: voting-redis
     engine: redis
     engineVersion: "7.1"
@@ -81,13 +80,13 @@ spec:
       name: voting-redis
     securityGroupIdRefs:
       - name: voting-redis
-    atRestEncryptionEnabled: true
+    atRestEncryptionEnabled: "true"
     transitEncryptionEnabled: false
     automaticFailoverEnabled: false
     multiAzEnabled: false
     snapshotRetentionLimit: 0
     applyImmediately: true
-    autoMinorVersionUpgrade: true
+    autoMinorVersionUpgrade: "true"
   writeConnectionSecretToRef:
     name: {{ $conn }}
   providerConfigRef:
