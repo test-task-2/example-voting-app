@@ -1,6 +1,9 @@
 nameOverride: ""
 fullnameOverride: ""
 
+rds:
+  enabled: false
+
 vote:
   enabled: true
   replicaCount: 2

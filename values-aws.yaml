@@ -5,10 +5,10 @@
 # Install those on the cluster first, then point parentRefs at that Gateway.
 # Result stickiness is TargetGroupConfiguration on the Service (cookie -> pod).
 #
-# Hosted RDS + ElastiCache. In-cluster db/redis charts stay off; vote/worker/result
-# get host/port (and Postgres user/password) from Secrets Manager via ExternalSecret.
-#   cool/postgres-app  — RDS
-#   cool/redis         — ElastiCache
+# Hosted RDS + ElastiCache. In-cluster db/redis charts stay off.
+# Postgres user/password come from Secrets Manager cool/postgres-app.
+# POSTGRES_HOST and POSTGRES_PORT come from the Crossplane connection secret
+# after RDS is created. cool/redis is ElastiCache.
 
 db:
   enabled: false
@@ -23,6 +23,7 @@ global:
   db:
     enabled: false
     database: app
+    connectionSecret: voting-app-postgres-conn
   redis:
     enabled: false
   gateway:
@@ -33,6 +34,9 @@ global:
         name: alb
         namespace: kube-system
         sectionName: https
+
+rds:
+  enabled: true
 
 externalSecret:
   secretStore:

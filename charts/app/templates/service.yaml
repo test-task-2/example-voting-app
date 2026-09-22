@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "voting-lib.labels" . | nindent 4 }}
   annotations:
-    {{- include "voting-lib.syncWave" "3" | nindent 4 }}
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   type: {{ .Values.service.type }}
   ports:

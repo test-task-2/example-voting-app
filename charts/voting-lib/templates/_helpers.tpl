@@ -26,10 +26,6 @@ app.kubernetes.io/name: {{ include "voting-lib.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
-{{- define "voting-lib.syncWave" -}}
-argocd.argoproj.io/sync-wave: {{ . | quote }}
-{{- end }}
-
 {{- define "voting-lib.image" -}}
 {{- $tag := default "latest" .tag | toString }}
 {{- printf "%s:%s" .repository $tag }}
@@ -81,6 +77,17 @@ argocd.argoproj.io/sync-wave: {{ . | quote }}
   value: {{ default "db" $db.host | quote }}
 - name: POSTGRES_PORT
   value: {{ default "5432" $db.port | quote }}
+{{- else if $db.connectionSecret }}
+- name: POSTGRES_HOST
+  valueFrom:
+    secretKeyRef:
+      name: {{ $db.connectionSecret }}
+      key: host
+- name: POSTGRES_PORT
+  valueFrom:
+    secretKeyRef:
+      name: {{ $db.connectionSecret }}
+      key: port
 {{- else }}
 - name: POSTGRES_HOST
   valueFrom:

@@ -7,7 +7,7 @@ metadata:
   labels:
     {{- include "voting-lib.labels" . | nindent 4 }}
   annotations:
-    {{- include "voting-lib.syncWave" "2" | nindent 4 }}
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   replicas: {{ .Values.replicaCount }}
   revisionHistoryLimit: {{ $rollout.revisionHistoryLimit | default 2 }}

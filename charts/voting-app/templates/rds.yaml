@@ -1,0 +1,119 @@
+{{- if .Values.rds.enabled }}
+{{- $region := required "region from terraform-values.yaml" .Values.region }}
+{{- $subnets := required "databaseSubnets from terraform-values.yaml" .Values.databaseSubnets }}
+{{- $sg := required "databaseSecurityGroupId from terraform-values.yaml" .Values.databaseSecurityGroupId }}
+{{- $conn := required "global.db.connectionSecret" .Values.global.db.connectionSecret }}
+{{- range $subnets }}
+---
+apiVersion: ec2.aws.m.upbound.io/v1beta1
+kind: Subnet
+metadata:
+  name: {{ .name }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    crossplane.io/external-name: {{ .id | quote }}
+spec:
+  managementPolicies: ["Observe"]
+  forProvider:
+    region: {{ $region }}
+    availabilityZone: {{ .availabilityZone }}
+    tags:
+      Name: {{ .name }}
+      Tier: db
+  providerConfigRef:
+    kind: ClusterProviderConfig
+    name: default
+{{- end }}
+---
+apiVersion: ec2.aws.m.upbound.io/v1beta1
+kind: SecurityGroup
+metadata:
+  name: voting-db
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    crossplane.io/external-name: {{ $sg | quote }}
+spec:
+  managementPolicies: ["Observe"]
+  forProvider:
+    region: {{ $region }}
+  providerConfigRef:
+    kind: ClusterProviderConfig
+    name: default
+---
+apiVersion: rds.aws.m.upbound.io/v1beta1
+kind: SubnetGroup
+metadata:
+  name: voting-postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    crossplane.io/external-name: voting-postgres
+spec:
+  forProvider:
+    region: {{ $region }}
+    description: Voting app Postgres
+    subnetIdRefs:
+      {{- range $subnets }}
+      - name: {{ .name }}
+      {{- end }}
+  providerConfigRef:
+    kind: ClusterProviderConfig
+    name: default
+---
+apiVersion: rds.aws.m.upbound.io/v1beta1
+kind: ParameterGroup
+metadata:
+  name: voting-postgres16
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  forProvider:
+    region: {{ $region }}
+    family: postgres16
+    description: Voting app Postgres
+    parameter:
+      - name: rds.force_ssl
+        value: "0"
+  providerConfigRef:
+    kind: ClusterProviderConfig
+    name: default
+---
+apiVersion: rds.aws.m.upbound.io/v1beta1
+kind: Instance
+metadata:
+  name: voting-postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    crossplane.io/external-name: voting-postgres
+spec:
+  forProvider:
+    region: {{ $region }}
+    identifier: voting-postgres
+    engine: postgres
+    engineVersion: "16.13"
+    instanceClass: db.t3.micro
+    allocatedStorage: 20
+    storageType: gp2
+    storageEncrypted: true
+    dbName: app
+    username: appadmin
+    passwordSecretRef:
+      name: {{ include "voting-lib.postgresSecretName" . }}
+      key: password
+    dbSubnetGroupNameRef:
+      name: voting-postgres
+    parameterGroupNameRef:
+      name: voting-postgres16
+    vpcSecurityGroupIdRefs:
+      - name: voting-db
+    publiclyAccessible: false
+    backupRetentionPeriod: 0
+    skipFinalSnapshot: true
+    deletionProtection: false
+    autoMinorVersionUpgrade: true
+    applyImmediately: true
+  writeConnectionSecretToRef:
+    name: {{ $conn }}
+  providerConfigRef:
+    kind: ClusterProviderConfig
+    name: default
+{{- end }}
