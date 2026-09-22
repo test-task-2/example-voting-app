@@ -83,7 +83,6 @@ metadata:
   name: voting-postgres
   annotations:
     argocd.argoproj.io/sync-wave: "1"
-    crossplane.io/external-name: voting-postgres
 spec:
   forProvider:
     region: {{ $region }}
